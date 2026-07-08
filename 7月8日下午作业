@@ -1,0 +1,118 @@
+练习1
+任务1
+import numpy as np
+import time
+
+A = np.random.rand(1000, 2000)
+B = np.random.rand(2000, 3000)
+
+start = time.time()
+result_dot = np.dot(A, B)
+print(f"np.dot: {time.time() - start:.4f}s")
+
+start = time.time()
+result_at = A @ B
+print(f"@ 运算符: {time.time() - start:.4f}s")
+
+start = time.time()
+result_matmul = np.matmul(A, B)
+print(f"np.matmul: {time.time() - start:.4f}s")
+
+%timeit np.dot(A, B)
+%timeit A @ B
+%timeit np.matmul(A, B)
+任务2
+C_order = np.random.rand(1000, 1000, order='C')
+F_order = np.random.rand(1000, 1000, order='F')
+
+print(f"C order flags: {C_order.flags}")
+print(f"F order flags: {F_order.flags}")
+
+%timeit np.sum(C_order, axis=0)
+%timeit np.sum(C_order, axis=1)
+%timeit np.sum(F_order, axis=0)
+%timeit np.sum(F_order, axis=1)
+
+%timeit C_order.sum(axis=0)
+%timeit C_order.sum(axis=1)
+%timeit F_order.sum(axis=0)
+%timeit F_order.sum(axis=1)
+任务3
+A = np.random.rand(1000, 1000)
+result = np.empty_like(A)
+
+np.multiply(A, A, out=result)
+np.multiply(2, A, out=result)
+np.add(result, 1, out=result)
+
+%timeit A**2 + 2*A + 1
+%timeit np.add(np.multiply(A, A, out=result), np.multiply(2, A, out=result), 1, out=result)
+练习2
+任务1
+prices = np.array([100, 102, 105, 103, 107])
+returns = np.diff(np.log(prices))
+print(f"对数收益率: {returns}")
+
+prices_large = np.random.rand(10000) * 200 + 50
+returns_vectorized = np.log(prices_large[1:]) - np.log(prices_large[:-1])
+returns_diff = np.diff(np.log(prices_large))
+print(f"向量化方法结果相等: {np.allclose(returns_vectorized, returns_diff)}")
+任务2
+prices = np.random.rand(100) * 100 + 50
+
+def moving_average_conv(data, window):
+    return np.convolve(data, np.ones(window)/window, mode='valid')
+
+def moving_average_cumsum(data, window):
+    cumsum = np.cumsum(np.insert(data, 0, 0))
+    return (cumsum[window:] - cumsum[:-window]) / window
+
+window5_conv = moving_average_conv(prices, 5)
+window20_conv = moving_average_conv(prices, 20)
+window5_cumsum = moving_average_cumsum(prices, 5)
+
+print(f"卷积方法5日MA前5个值: {window5_conv[:5]}")
+print(f"累积和方法5日MA前5个值: {window5_cumsum[:5]}")
+print(f"两种方法结果相等: {np.allclose(window5_conv, window5_cumsum)}")
+
+%timeit moving_average_conv(prices, 5)
+%timeit moving_average_cumsum(prices, 5)
+
+large_prices = np.random.rand(10000) * 100 + 50
+%timeit moving_average_conv(large_prices, 20)
+%timeit moving_average_cumsum(large_prices, 20)
+任务3
+returns_data = np.random.randn(1000, 252) * 0.02
+
+volatility = np.std(returns_data, axis=1) * np.sqrt(252)
+print(f"年化波动率统计:")
+print(f"均值: {volatility.mean():.4f}")
+print(f"标准差: {volatility.std():.4f}")
+print(f"最小值: {volatility.min():.4f}")
+print(f"最大值: {volatility.max():.4f}")
+
+correlation_matrix = np.corrcoef(returns_data)
+print(f"相关系数矩阵形状: {correlation_matrix.shape}")
+print(f"相关系数矩阵统计:")
+print(f"均值: {correlation_matrix.mean():.4f}")
+print(f"标准差: {correlation_matrix.std():.4f}")
+
+corr_flat = correlation_matrix[np.triu_indices_from(correlation_matrix, k=1)]
+print(f"非对角线相关系数统计:")
+print(f"均值: {corr_flat.mean():.4f}")
+print(f"标准差: {corr_flat.std():.4f}")
+print(f"最小值: {corr_flat.min():.4f}")
+print(f"最大值: {corr_flat.max():.4f}")
+扩展思考
+def monte_carlo_stock_prices(S0, mu, sigma, T, dt, n_simulations):
+    n_steps = int(T / dt)
+    returns = np.random.randn(n_simulations, n_steps) * sigma * np.sqrt(dt) + (mu - 0.5 * sigma**2) * dt
+    paths = np.zeros((n_simulations, n_steps + 1))
+    paths[:, 0] = S0
+    np.cumsum(returns, axis=1, out=returns)
+    paths[:, 1:] = S0 * np.exp(returns)
+    return paths
+
+S0, mu, sigma, T = 100, 0.1, 0.2, 1
+dt = 1/252
+sim_paths = monte_carlo_stock_prices(S0, mu, sigma, T, dt, 10000)
