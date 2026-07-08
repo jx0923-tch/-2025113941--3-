@@ -1,0 +1,272 @@
+import random
+import os
+from typing import Any, List, Tuple, Optional
+
+
+class Stack:
+
+    def __init__(self, capacity: int = 10):
+        self.items: List[Any] = []
+        self.capacity = capacity
+
+    def push(self, item: Any) -> bool:
+        if self.is_full():
+            return False
+        self.items.append(item)
+        return True
+
+    def pop(self) -> Optional[Any]:
+        if self.is_empty():
+            return None
+        return self.items.pop()
+
+    def peek(self) -> Optional[Any]:
+        if self.is_empty():
+            return None
+        return self.items[-1]
+
+    def is_empty(self) -> bool:
+        return len(self.items) == 0
+
+    def is_full(self) -> bool:
+        return len(self.items) >= self.capacity
+
+    def swap_top_two(self) -> bool:
+        if len(self.items) < 2:
+            return False
+        self.items[-1], self.items[-2] = self.items[-2], self.items[-1]
+        return True
+
+    def __str__(self) -> str:
+        return str(self.items)
+
+    def __len__(self) -> int:
+        return len(self.items)
+
+
+class ScoreManager:
+
+    def __init__(self, filename: str = "highscore.txt"):
+        self.filename = filename
+        self.high_score = self._load_high_score()
+
+    def _load_high_score(self) -> int:
+        try:
+            if os.path.exists(self.filename):
+                with open(self.filename, 'r') as f:
+                    return int(f.read().strip())
+        except (ValueError, IOError):
+            pass
+        return 0
+
+    def save_high_score(self, score: int) -> bool:
+        if score > self.high_score:
+            self.high_score = score
+            try:
+                with open(self.filename, 'w') as f:
+                    f.write(str(score))
+                return True
+            except IOError:
+                print("警告：无法保存最高分到文件")
+        return False
+
+    def get_high_score(self) -> int:
+        return self.high_score
+
+
+class StackGame:
+
+    def __init__(self, capacity: int = 10, rounds: int = 10):
+        self.stack = Stack(capacity)
+        self.score = 0
+        self.rounds = rounds
+        self.current_round = 0
+        self.history: List[Tuple[str, Any, Optional[Any]]] = []
+        self.score_manager = ScoreManager()
+        self.double_score_active = False
+        self.temp_capacity_increase = 0
+
+    def _check_random_event(self) -> str:
+        if random.random() < 0.1:
+            event_type = random.choice(["double_score", "capacity_boost"])
+
+            if event_type == "double_score":
+                self.double_score_active = True
+                return "🎉 幸运事件：下一轮得分将翻倍！"
+            elif event_type == "capacity_boost":
+                boost = random.randint(2, 5)
+                self.stack.capacity += boost
+                self.temp_capacity_increase = boost
+                return f"🚀 幸运事件：堆栈容量临时增加 {boost}！"
+        return ""
+
+    def _process_command(self, cmd: str) -> bool:
+        parts = cmd.strip().split()
+
+        if not parts:
+            return False
+
+        command = parts[0].lower()
+
+        if command == "push":
+            if len(parts) < 2:
+                print("错误：push命令需要一个参数")
+                return False
+
+            item = " ".join(parts[1:])
+            success = self.stack.push(item)
+
+            if success:
+                self.history.append(("push", item, None))
+                self._update_score(1)
+                print(f"✓ 成功压入：{item}")
+            else:
+                self._update_score(-1)
+                print("✗ 栈已满，无法压入元素")
+
+            return success
+
+        elif command == "pop":
+            popped_item = self.stack.pop()
+
+            if popped_item is not None:
+                self.history.append(("pop", None, popped_item))
+                self._update_score(1)
+                print(f"✓ 成功弹出：{popped_item}")
+            else:
+                self._update_score(-1)
+                print("✗ 栈为空，无法弹出元素")
+
+            return popped_item is not None
+
+        elif command == "peek":
+            top_item = self.stack.peek()
+
+            if top_item is not None:
+                self._update_score(1)
+                print(f"✓ 栈顶元素：{top_item}")
+            else:
+                self._update_score(-1)
+                print("✗ 栈为空，无法查看栈顶")
+
+            return top_item is not None
+
+        elif command == "undo":
+            return self._undo_last_operation()
+
+        elif command == "swap":
+            success = self.stack.swap_top_two()
+
+            if success:
+                self.history.append(("swap", None, None))
+                self._update_score(1)
+                print("✓ 成功交换栈顶两个元素")
+            else:
+                self._update_score(-1)
+                print("✗ 栈中元素不足2个，无法交换")
+
+            return success
+
+        else:
+            print(f"✗ 无效命令：{command}")
+            print("可用命令：push <元素>, pop, peek, undo, swap")
+            return False
+
+    def _undo_last_operation(self) -> bool:
+        if not self.history:
+            print("✗ 没有可撤销的操作")
+            return False
+
+        last_op, param, old_value = self.history.pop()
+
+        if last_op == "push":
+            self.stack.pop()
+            self._update_score(-1)
+            print(f"✓ 撤销了压入操作：{param}")
+        elif last_op == "pop":
+            self.stack.push(old_value)
+            self._update_score(-1)
+            print(f"✓ 撤销了弹出操作：恢复了 {old_value}")
+        elif last_op == "swap":
+            self.stack.swap_top_two()
+            self._update_score(-1)
+            print("✓ 撤销了交换操作")
+
+        return True
+
+    def _update_score(self, delta: int):
+        if self.double_score_active:
+            delta *= 2
+            self.double_score_active = False
+
+        self.score += delta
+
+    def run(self):
+        print("=" * 50)
+        print("欢迎来到堆栈小游戏！")
+        print(f"历史最高分：{self.score_manager.get_high_score()}")
+        print("=" * 50)
+        print("\n可用命令：")
+        print("  push <元素>  - 压入元素")
+        print("  pop          - 弹出栈顶元素")
+        print("  peek         - 查看栈顶元素")
+        print("  swap         - 交换栈顶两个元素")
+        print("  undo         - 撤销上一次操作")
+        print("\n规则：")
+        print("  - 操作成功 +1分，失败 -1分")
+        print("  - 10%概率触发幸运事件")
+        print("=" * 50)
+
+        for round_num in range(1, self.rounds + 1):
+            self.current_round = round_num
+            print(f"\n第 {round_num}/{self.rounds} 轮")
+            print(f"当前堆栈：{self.stack} (容量：{self.stack.capacity})")
+            print(f"当前分数：{self.score}")
+
+            event_msg = self._check_random_event()
+            if event_msg:
+                print(event_msg)
+
+            while True:
+                cmd = input("请输入命令：").strip()
+                if cmd:
+                    break
+                print("请输入有效命令！")
+
+            self._process_command(cmd)
+
+            print(f"本轮后堆栈：{self.stack}")
+            print(f"本轮后分数：{self.score}")
+
+        self._end_game()
+
+    def _end_game(self):
+        print("\n" + "=" * 50)
+        print("游戏结束！")
+        print(f"最终分数：{self.score}")
+
+        if self.score_manager.save_high_score(self.score):
+            print("🎊 恭喜！你创造了新的最高分记录！")
+
+        print(f"历史最高分：{self.score_manager.get_high_score()}")
+
+        if self.temp_capacity_increase > 0:
+            self.stack.capacity -= self.temp_capacity_increase
+
+        print("=" * 50)
+
+
+def main():
+    try:
+        game = StackGame(capacity=10, rounds=10)
+        game.run()
+    except KeyboardInterrupt:
+        print("\n\n游戏被中断")
+    except Exception as e:
+        print(f"\n发生错误：{e}")
+
+    input("\n按回车键退出...")
+
+
+if __name__ == "__main__":
+    main()
