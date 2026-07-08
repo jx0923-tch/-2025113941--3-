@@ -1,0 +1,324 @@
+import math
+import os
+from datetime import datetime
+
+
+class MathCalculator:
+    def __init__(self, history_file="calculator_history.txt"):
+        self.history_file = history_file
+        self.history = []
+        self._load_history()
+    
+    def add(self, a, b):
+        result = a + b
+        self._save_to_history(f"{a} + {b} = {result}")
+        return result
+    
+    def subtract(self, a, b):
+        result = a - b
+        self._save_to_history(f"{a} - {b} = {result}")
+        return result
+    
+    def multiply(self, a, b):
+        result = a * b
+        self._save_to_history(f"{a} × {b} = {result}")
+        return result
+    
+    def divide(self, a, b):
+        if b == 0:
+            raise ValueError("❌ 除数不能为零！")
+        result = a / b
+        self._save_to_history(f"{a} ÷ {b} = {result}")
+        return result
+    
+    def power(self, a, b):
+        result = a ** b
+        self._save_to_history(f"{a} ^ {b} = {result}")
+        return result
+    
+    def square_root(self, a):
+        if a < 0:
+            raise ValueError("❌ 不能对负数开平方！")
+        result = math.sqrt(a)
+        self._save_to_history(f"√{a} = {result}")
+        return result
+    
+    def factorial(self, a):
+        if a < 0:
+            raise ValueError("❌ 负数没有阶乘！")
+        if not a.is_integer():
+            raise ValueError("❌ 阶乘只适用于整数！")
+        result = math.factorial(int(a))
+        self._save_to_history(f"{int(a)}! = {result}")
+        return result
+    
+    def _save_to_history(self, record):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        full_record = f"[{timestamp}] {record}"
+        self.history.append(full_record)
+        self._write_to_file(full_record)
+    
+    def _write_to_file(self, record):
+        try:
+            with open(self.history_file, 'a', encoding='utf-8') as f:
+                f.write(record + '\n')
+        except Exception as e:
+            print(f"⚠️ 写入历史记录失败：{e}")
+    
+    def _load_history(self):
+        if not os.path.exists(self.history_file):
+            return
+        
+        try:
+            with open(self.history_file, 'r', encoding='utf-8') as f:
+                self.history = [line.strip() for line in f.readlines() if line.strip()]
+            print(f"✅ 已加载 {len(self.history)} 条历史记录")
+        except Exception as e:
+            print(f"⚠️ 读取历史记录失败：{e}")
+    
+    def show_history(self):
+        if not self.history:
+            print("\n📭 暂无计算历史记录")
+            return
+        
+        print("\n" + "="*60)
+        print("📜 计算历史记录")
+        print("="*60)
+        for i, record in enumerate(self.history[-20:], 1):
+            print(f"{i:>3}. {record}")
+        if len(self.history) > 20:
+            print(f"... 还有 {len(self.history) - 20} 条记录")
+        print("="*60)
+    
+    def clear_history(self):
+        confirm = input("⚠️ 确定要清空所有历史记录吗？(y/n)：")
+        if confirm.lower() == 'y':
+            self.history = []
+            try:
+                with open(self.history_file, 'w', encoding='utf-8') as f:
+                    f.write("")
+                print("✅ 历史记录已清空！")
+            except Exception as e:
+                print(f"❌ 清空失败：{e}")
+        else:
+            print("❌ 已取消操作")
+    
+    def get_number(self, prompt):
+        while True:
+            try:
+                num = float(input(prompt))
+                return num
+            except ValueError:
+                print("❌ 请输入有效的数字！")
+    
+    def run_basic_operations(self):
+        print("\n" + "="*50)
+        print("【基本运算】")
+        print("1. 加法 (+)")
+        print("2. 减法 (-)")
+        print("3. 乘法 (×)")
+        print("4. 除法 (÷)")
+        print("5. 幂运算 (^)")
+        
+        choice = input("\n请选择运算类型（1-5）：").strip()
+        
+        if choice in ['1', '2', '3', '4', '5']:
+            a = self.get_number("请输入第一个数：")
+            b = self.get_number("请输入第二个数：")
+            
+            try:
+                if choice == '1':
+                    result = self.add(a, b)
+                elif choice == '2':
+                    result = self.subtract(a, b)
+                elif choice == '3':
+                    result = self.multiply(a, b)
+                elif choice == '4':
+                    result = self.divide(a, b)
+                elif choice == '5':
+                    result = self.power(a, b)
+                
+                print(f"\n✅ 计算结果：{result}")
+            except ValueError as e:
+                print(f"\n{e}")
+        else:
+            print("❌ 无效的选择！")
+    
+    def run_advanced_operations(self):
+        print("\n" + "="*50)
+        print("【高级运算】")
+        print("1. 开平方 (√)")
+        print("2. 阶乘 (!)")
+        
+        choice = input("\n请选择运算类型（1-2）：").strip()
+        
+        if choice == '1':
+            a = self.get_number("请输入要开平方的数：")
+            try:
+                result = self.square_root(a)
+                print(f"\n✅ 计算结果：√{a} = {result}")
+            except ValueError as e:
+                print(f"\n{e}")
+        
+        elif choice == '2':
+            a = self.get_number("请输入要计算阶乘的数：")
+            try:
+                result = self.factorial(a)
+                print(f"\n✅ 计算结果：{int(a)}! = {result}")
+            except ValueError as e:
+                print(f"\n{e}")
+        
+        else:
+            print("❌ 无效的选择！")
+    
+    def run(self):
+        print("\n" + "="*50)
+        print("🧮 数学计算器")
+        print(f"📁 历史文件：{self.history_file}")
+        print("="*50)
+        
+        while True:
+            print("\n" + "="*50)
+            print("请选择功能：")
+            print("1. 🧮 基本运算（+ - × ÷ ^）")
+            print("2. 🔢 高级运算（√ !）")
+            print("3. 📜 查看历史记录")
+            print("4. 🗑️  清空历史记录")
+            print("5. 🚪 退出")
+            print("="*50)
+            
+            choice = input("请输入选择（1-5）：").strip()
+            
+            if choice == '1':
+                self.run_basic_operations()
+            
+            elif choice == '2':
+                self.run_advanced_operations()
+            
+            elif choice == '3':
+                self.show_history()
+            
+            elif choice == '4':
+                self.clear_history()
+            
+            elif choice == '5':
+                print("\n👋 感谢使用数学计算器，再见！")
+                print(f"💾 历史记录已保存到：{self.history_file}")
+                break
+            
+            else:
+                print("❌ 无效的选择，请输入1-5之间的数字！")
+            
+            input("\n按 Enter 键继续...")
+
+
+def function_calculator():
+    def add(a, b):
+        return a + b
+    
+    def subtract(a, b):
+        return a - b
+    
+    def multiply(a, b):
+        return a * b
+    
+    def divide(a, b):
+        if b == 0:
+            raise ValueError("除数不能为零")
+        return a / b
+    
+    def power(a, b):
+        return a ** b
+    
+    def square_root(a):
+        if a < 0:
+            raise ValueError("不能对负数开平方")
+        return math.sqrt(a)
+    
+    def factorial(a):
+        if a < 0 or not a.is_integer():
+            raise ValueError("阶乘只适用于非负整数")
+        return math.factorial(int(a))
+    
+    def show_menu():
+        print("\n" + "="*50)
+        print("【函数式计算器】")
+        print("1. 加法  2. 减法  3. 乘法")
+        print("4. 除法  5. 幂运算  6. 开平方")
+        print("7. 阶乘  8. 退出")
+        print("="*50)
+    
+    def get_number(prompt):
+        while True:
+            try:
+                return float(input(prompt))
+            except ValueError:
+                print("❌ 请输入有效的数字！")
+    
+    def perform_calculation():
+        show_menu()
+        choice = input("请选择（1-8）：").strip()
+        
+        if choice == '8':
+            return False
+        
+        try:
+            if choice in ['1', '2', '3', '4', '5']:
+                a = get_number("请输入第一个数：")
+                b = get_number("请输入第二个数：")
+                
+                operations = {
+                    '1': add, '2': subtract,
+                    '3': multiply, '4': divide, '5': power
+                }
+                op_names = {
+                    '1': '+', '2': '-', '3': '×', '4': '÷', '5': '^'
+                }
+                
+                result = operations[choice](a, b)
+                print(f"\n✅ {a} {op_names[choice]} {b} = {result}")
+            
+            elif choice == '6':
+                a = get_number("请输入要开平方的数：")
+                result = square_root(a)
+                print(f"\n✅ √{a} = {result}")
+            
+            elif choice == '7':
+                a = get_number("请输入要计算阶乘的数：")
+                result = factorial(a)
+                print(f"\n✅ {int(a)}! = {result}")
+            
+            else:
+                print("❌ 无效的选择！")
+        
+        except ValueError as e:
+            print(f"\n❌ 错误：{e}")
+        
+        return True
+    
+    print("\n🧮 函数式计算器启动...")
+    while True:
+        if not perform_calculation():
+            print("\n👋 再见！")
+            break
+        input("\n按 Enter 键继续...")
+
+
+if __name__ == "__main__":
+    print("="*50)
+    print("请选择运行模式：")
+    print("1. 类版本计算器（含文件历史记录）")
+    print("2. 函数版本计算器（模块化演示）")
+    print("="*50)
+    
+    choice = input("请选择（1-2）：").strip()
+    
+    if choice == '1':
+        calculator = MathCalculator()
+        calculator.run()
+    elif choice == '2':
+        function_calculator()
+    else:
+        print("❌ 无效的选择，默认运行类版本...")
+        calculator = MathCalculator()
+        calculator.run()
