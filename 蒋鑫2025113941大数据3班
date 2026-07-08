@@ -1,272 +1,202 @@
-import random
-import os
-from typing import Any, List, Tuple, Optional
-
-
-class Stack:
-
-    def __init__(self, capacity: int = 10):
-        self.items: List[Any] = []
-        self.capacity = capacity
-
-    def push(self, item: Any) -> bool:
-        if self.is_full():
-            return False
-        self.items.append(item)
-        return True
-
-    def pop(self) -> Optional[Any]:
-        if self.is_empty():
-            return None
-        return self.items.pop()
-
-    def peek(self) -> Optional[Any]:
-        if self.is_empty():
-            return None
-        return self.items[-1]
-
-    def is_empty(self) -> bool:
-        return len(self.items) == 0
-
-    def is_full(self) -> bool:
-        return len(self.items) >= self.capacity
-
-    def swap_top_two(self) -> bool:
-        if len(self.items) < 2:
-            return False
-        self.items[-1], self.items[-2] = self.items[-2], self.items[-1]
-        return True
-
-    def __str__(self) -> str:
-        return str(self.items)
-
-    def __len__(self) -> int:
-        return len(self.items)
-
-
-class ScoreManager:
-
-    def __init__(self, filename: str = "highscore.txt"):
-        self.filename = filename
-        self.high_score = self._load_high_score()
-
-    def _load_high_score(self) -> int:
-        try:
-            if os.path.exists(self.filename):
-                with open(self.filename, 'r') as f:
-                    return int(f.read().strip())
-        except (ValueError, IOError):
-            pass
-        return 0
-
-    def save_high_score(self, score: int) -> bool:
-        if score > self.high_score:
-            self.high_score = score
-            try:
-                with open(self.filename, 'w') as f:
-                    f.write(str(score))
-                return True
-            except IOError:
-                print("警告：无法保存最高分到文件")
-        return False
-
-    def get_high_score(self) -> int:
-        return self.high_score
-
-
-class StackGame:
-
-    def __init__(self, capacity: int = 10, rounds: int = 10):
-        self.stack = Stack(capacity)
-        self.score = 0
-        self.rounds = rounds
-        self.current_round = 0
-        self.history: List[Tuple[str, Any, Optional[Any]]] = []
-        self.score_manager = ScoreManager()
-        self.double_score_active = False
-        self.temp_capacity_increase = 0
-
-    def _check_random_event(self) -> str:
-        if random.random() < 0.1:
-            event_type = random.choice(["double_score", "capacity_boost"])
-
-            if event_type == "double_score":
-                self.double_score_active = True
-                return "🎉 幸运事件：下一轮得分将翻倍！"
-            elif event_type == "capacity_boost":
-                boost = random.randint(2, 5)
-                self.stack.capacity += boost
-                self.temp_capacity_increase = boost
-                return f"🚀 幸运事件：堆栈容量临时增加 {boost}！"
-        return ""
-
-    def _process_command(self, cmd: str) -> bool:
-        parts = cmd.strip().split()
-
-        if not parts:
-            return False
-
-        command = parts[0].lower()
-
-        if command == "push":
-            if len(parts) < 2:
-                print("错误：push命令需要一个参数")
-                return False
-
-            item = " ".join(parts[1:])
-            success = self.stack.push(item)
-
-            if success:
-                self.history.append(("push", item, None))
-                self._update_score(1)
-                print(f"✓ 成功压入：{item}")
-            else:
-                self._update_score(-1)
-                print("✗ 栈已满，无法压入元素")
-
-            return success
-
-        elif command == "pop":
-            popped_item = self.stack.pop()
-
-            if popped_item is not None:
-                self.history.append(("pop", None, popped_item))
-                self._update_score(1)
-                print(f"✓ 成功弹出：{popped_item}")
-            else:
-                self._update_score(-1)
-                print("✗ 栈为空，无法弹出元素")
-
-            return popped_item is not None
-
-        elif command == "peek":
-            top_item = self.stack.peek()
-
-            if top_item is not None:
-                self._update_score(1)
-                print(f"✓ 栈顶元素：{top_item}")
-            else:
-                self._update_score(-1)
-                print("✗ 栈为空，无法查看栈顶")
-
-            return top_item is not None
-
-        elif command == "undo":
-            return self._undo_last_operation()
-
-        elif command == "swap":
-            success = self.stack.swap_top_two()
-
-            if success:
-                self.history.append(("swap", None, None))
-                self._update_score(1)
-                print("✓ 成功交换栈顶两个元素")
-            else:
-                self._update_score(-1)
-                print("✗ 栈中元素不足2个，无法交换")
-
-            return success
-
-        else:
-            print(f"✗ 无效命令：{command}")
-            print("可用命令：push <元素>, pop, peek, undo, swap")
-            return False
-
-    def _undo_last_operation(self) -> bool:
-        if not self.history:
-            print("✗ 没有可撤销的操作")
-            return False
-
-        last_op, param, old_value = self.history.pop()
-
-        if last_op == "push":
-            self.stack.pop()
-            self._update_score(-1)
-            print(f"✓ 撤销了压入操作：{param}")
-        elif last_op == "pop":
-            self.stack.push(old_value)
-            self._update_score(-1)
-            print(f"✓ 撤销了弹出操作：恢复了 {old_value}")
-        elif last_op == "swap":
-            self.stack.swap_top_two()
-            self._update_score(-1)
-            print("✓ 撤销了交换操作")
-
-        return True
-
-    def _update_score(self, delta: int):
-        if self.double_score_active:
-            delta *= 2
-            self.double_score_active = False
-
-        self.score += delta
-
-    def run(self):
-        print("=" * 50)
-        print("欢迎来到堆栈小游戏！")
-        print(f"历史最高分：{self.score_manager.get_high_score()}")
-        print("=" * 50)
-        print("\n可用命令：")
-        print("  push <元素>  - 压入元素")
-        print("  pop          - 弹出栈顶元素")
-        print("  peek         - 查看栈顶元素")
-        print("  swap         - 交换栈顶两个元素")
-        print("  undo         - 撤销上一次操作")
-        print("\n规则：")
-        print("  - 操作成功 +1分，失败 -1分")
-        print("  - 10%概率触发幸运事件")
-        print("=" * 50)
-
-        for round_num in range(1, self.rounds + 1):
-            self.current_round = round_num
-            print(f"\n第 {round_num}/{self.rounds} 轮")
-            print(f"当前堆栈：{self.stack} (容量：{self.stack.capacity})")
-            print(f"当前分数：{self.score}")
-
-            event_msg = self._check_random_event()
-            if event_msg:
-                print(event_msg)
-
+class StudentGradeSystem:
+    def __init__(self):
+        self.students = {}
+        
+    def add_student(self):
+        print("\n" + "="*50)
+        print("【录入学生信息】")
+        
+        while True:
+            student_id = input("请输入学号（如：2024001）：").strip()
+            if not student_id:
+                print("❌ 学号不能为空，请重新输入！")
+                continue
+            if student_id in self.students:
+                print("❌ 该学号已存在，请重新输入！")
+                continue
+            break
+        
+        while True:
+            name = input("请输入姓名：").strip()
+            if not name:
+                print("❌ 姓名不能为空，请重新输入！")
+                continue
+            break
+        
+        subjects = ['语文', '数学', '英语']
+        scores = {}
+        total_score = 0
+        
+        print("\n请输入各科成绩：")
+        for subject in subjects:
             while True:
-                cmd = input("请输入命令：").strip()
-                if cmd:
-                    break
-                print("请输入有效命令！")
-
-            self._process_command(cmd)
-
-            print(f"本轮后堆栈：{self.stack}")
-            print(f"本轮后分数：{self.score}")
-
-        self._end_game()
-
-    def _end_game(self):
-        print("\n" + "=" * 50)
-        print("游戏结束！")
-        print(f"最终分数：{self.score}")
-
-        if self.score_manager.save_high_score(self.score):
-            print("🎊 恭喜！你创造了新的最高分记录！")
-
-        print(f"历史最高分：{self.score_manager.get_high_score()}")
-
-        if self.temp_capacity_increase > 0:
-            self.stack.capacity -= self.temp_capacity_increase
-
-        print("=" * 50)
-
-
-def main():
-    try:
-        game = StackGame(capacity=10, rounds=10)
-        game.run()
-    except KeyboardInterrupt:
-        print("\n\n游戏被中断")
-    except Exception as e:
-        print(f"\n发生错误：{e}")
-
-    input("\n按回车键退出...")
+                try:
+                    score = float(input(f"  {subject}："))
+                    if 0 <= score <= 100:
+                        scores[subject] = score
+                        total_score += score
+                        break
+                    else:
+                        print("❌ 成绩应在0-100之间，请重新输入！")
+                except ValueError:
+                    print("❌ 请输入有效的数字！")
+        
+        avg_score = total_score / len(subjects)
+        
+        self.students[student_id] = {
+            'name': name,
+            'scores': scores,
+            'total': total_score,
+            'average': avg_score
+        }
+        
+        print(f"\n✅ 学生 {name}（学号：{student_id}）信息录入成功！")
+        print(f"   总成绩：{total_score:.1f}，平均分：{avg_score:.1f}")
+    
+    def query_student(self):
+        print("\n" + "="*50)
+        print("【查询学生信息】")
+        
+        if not self.students:
+            print("⚠️ 当前没有学生信息，请先录入！")
+            return
+        
+        print("1. 按学号查询")
+        print("2. 按姓名查询")
+        print("3. 查看所有学生")
+        
+        choice = input("\n请选择查询方式：").strip()
+        
+        if choice == '1':
+            student_id = input("请输入学号：").strip()
+            if student_id in self.students:
+                self._display_student_info(student_id)
+            else:
+                print("❌ 未找到该学号的学生！")
+        
+        elif choice == '2':
+            name = input("请输入姓名：").strip()
+            found = False
+            for sid, info in self.students.items():
+                if info['name'] == name:
+                    self._display_student_info(sid)
+                    found = True
+            if not found:
+                print("❌ 未找到该姓名的学生！")
+        
+        elif choice == '3':
+            self._display_all_students()
+        
+        else:
+            print("❌ 无效的选择！")
+    
+    def _display_student_info(self, student_id):
+        info = self.students[student_id]
+        print("\n" + "-"*40)
+        print(f"📚 学号：{student_id}")
+        print(f"👤 姓名：{info['name']}")
+        print("📊 各科成绩：")
+        for subject, score in info['scores'].items():
+            print(f"   {subject}：{score:.1f}分")
+        print(f"📈 总成绩：{info['total']:.1f}分")
+        print(f"📊 平均分：{info['average']:.1f}分")
+        print("-"*40)
+    
+    def _display_all_students(self):
+        print("\n" + "="*50)
+        print("【所有学生信息】")
+        print("-"*50)
+        print(f"{'学号':<12} {'姓名':<8} {'语文':<8} {'数学':<8} {'英语':<8} {'平均分':<8}")
+        print("-"*50)
+        
+        for sid, info in self.students.items():
+            scores = info['scores']
+            print(f"{sid:<12} {info['name']:<8} "
+                  f"{scores['语文']:<8.1f} {scores['数学']:<8.1f} "
+                  f"{scores['英语']:<8.1f} {info['average']:<8.1f}")
+        print("-"*50)
+    
+    def statistics(self):
+        print("\n" + "="*50)
+        print("【成绩统计】")
+        
+        if not self.students:
+            print("⚠️ 当前没有学生信息，请先录入！")
+            return
+        
+        all_avg = sum(info['average'] for info in self.students.values()) / len(self.students)
+        
+        max_student = max(self.students.items(), key=lambda x: x[1]['average'])
+        min_student = min(self.students.items(), key=lambda x: x[1]['average'])
+        
+        print(f"\n📊 学生人数：{len(self.students)} 人")
+        print(f"📈 全体平均分：{all_avg:.2f} 分")
+        
+        print(f"\n🏆 最高分：")
+        print(f"   姓名：{max_student[1]['name']}，学号：{max_student[0]}")
+        print(f"   平均分：{max_student[1]['average']:.1f} 分")
+        
+        print(f"\n📉 最低分：")
+        print(f"   姓名：{min_student[1]['name']}，学号：{min_student[0]}")
+        print(f"   平均分：{min_student[1]['average']:.1f} 分")
+    
+    def delete_student(self):
+        print("\n" + "="*50)
+        print("【删除学生信息】")
+        
+        if not self.students:
+            print("⚠️ 当前没有学生信息！")
+            return
+        
+        student_id = input("请输入要删除的学号：").strip()
+        if student_id in self.students:
+            name = self.students[student_id]['name']
+            confirm = input(f"确定要删除学生 {name}（学号：{student_id}）吗？(y/n)：")
+            if confirm.lower() == 'y':
+                del self.students[student_id]
+                print(f"✅ 学生 {name} 信息已删除！")
+            else:
+                print("❌ 已取消删除操作！")
+        else:
+            print("❌ 未找到该学号的学生！")
+    
+    def run(self):
+        while True:
+            print("\n" + "="*50)
+            print("🏫 学生成绩管理系统")
+            print("="*50)
+            print("1. 📝 录入学生信息")
+            print("2. 🔍 查询学生信息")
+            print("3. 📊 成绩统计")
+            print("4. 🗑️  删除学生信息")
+            print("5. 📋 查看所有学生")
+            print("6. 🚪 退出系统")
+            print("="*50)
+            
+            choice = input("请选择操作（1-6）：").strip()
+            
+            if choice == '1':
+                self.add_student()
+            elif choice == '2':
+                self.query_student()
+            elif choice == '3':
+                self.statistics()
+            elif choice == '4':
+                self.delete_student()
+            elif choice == '5':
+                if self.students:
+                    self._display_all_students()
+                else:
+                    print("⚠️ 当前没有学生信息！")
+            elif choice == '6':
+                print("\n👋 感谢使用学生成绩管理系统，再见！")
+                break
+            else:
+                print("❌ 无效的选择，请输入1-6之间的数字！")
+            
+            input("\n按 Enter 键继续...")
 
 
 if __name__ == "__main__":
-    main()
+    system = StudentGradeSystem()
+    system.run()
