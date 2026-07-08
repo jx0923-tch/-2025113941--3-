@@ -1,0 +1,111 @@
+练习一
+import numpy as np
+
+arr = np.random.randint(0, 10, size=(3, 4))
+print("原始数组 (3x4):")
+print(arr)
+print(f"形状: {arr.shape}\n")
+
+reshaped_arr = arr.reshape(4, 3).T
+print("重塑为(4,3)并转置后的数组:")
+print(reshaped_arr)
+print(f"形状: {reshaped_arr.shape}\n")
+
+filtered_arr = arr[arr > 5]
+print("所有大于5的元素:")
+print(filtered_arr)
+练习二
+import numpy as np
+
+arr = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+print("原始数组:")
+print(arr)
+print(f"形状: {arr.shape}\n")
+
+result1 = arr[1, 0:3]
+print(f"第2行的第1~3列: {result1}")
+
+result2 = arr[:, 2]
+print(f"所有行的第3列: {result2}")
+
+result3 = arr[::2, :]
+print(f"奇数行(第1、3行):\n{result3}")
+
+print("\n--- 对比 arr[:, 2] 和 arr[::2, :] ---")
+print(f"arr[:, 2]: 获取所有行的第3列，结果形状: {arr[:, 2].shape}")
+print(f"arr[::2, :]: 获取奇数行所有列，结果形状: {arr[::2, :].shape}")
+练习三
+import numpy as np
+
+np.random.seed(42)
+A = np.random.randint(1, 10, size=(2, 3))
+B = np.random.randint(1, 10, size=(2, 3))
+
+print("数组A (2x3):")
+print(A)
+print("\n数组B (2x3):")
+print(B)
+
+elementwise = A * B
+print(f"\n逐元素乘法 (A * B):\n{elementwise}")
+
+matrix_product = A @ B.T
+print(f"矩阵乘法 (A @ B.T):\n{matrix_product}")
+
+arr_sum = np.array([[1, 2], [3, 4]])
+print(f"\n数组:\n{arr_sum}")
+
+row_sum = np.sum(arr_sum, axis=1)
+col_sum = np.sum(arr_sum, axis=0)
+print(f"按行求和 (axis=1): {row_sum}")
+print(f"按列求和 (axis=0): {col_sum}")
+
+arr_stats = np.array([1.2, 3.5, 2.8])
+print(f"\n数组: {arr_stats}")
+
+mean_val = np.mean(arr_stats)
+std_val = np.std(arr_stats)
+rounded = np.round(arr_stats)
+
+print(f"均值: {mean_val:.2f}")
+print(f"标准差: {std_val:.2f}")
+print(f"四舍五入: {rounded}")
+练习四
+import numpy as np
+
+np.random.seed(123)
+arr = np.random.random(10)
+print("原始数组:")
+print(arr)
+print(f"范围: [{arr.min():.4f}, {arr.max():.4f}]\n")
+
+normalized = (arr - arr.min()) / (arr.max() - arr.min()) * 100
+print("归一化到[0, 100]:")
+print(normalized)
+print(f"归一化后范围: [{normalized.min():.2f}, {normalized.max():.2f}]\n")
+
+cumsum_result = np.cumsum(arr)
+cummax_result = np.maximum.accumulate(arr)
+
+print("累计和:")
+print(cumsum_result)
+print("\n累计最大值:")
+print(cummax_result)
+1. 为什么 NumPy 的矢量化运算比 Python 循环高效？
+答： NumPy 的矢量化运算比 Python 循环高效的主要原因：
+
+底层 C 语言实现：NumPy 的核心运算用 C 语言编写，执行速度远快于 Python 解释器逐行执行循环代码。
+
+减少 Python 解释器开销：Python 循环每次迭代都需要执行类型检查、对象创建等操作，而矢量化运算在底层一次性处理整个数组。
+
+内存连续性：NumPy 数组在内存中连续存储，CPU 缓存命中率高，访问速度快。
+
+利用 SIMD 指令：现代 CPU 支持单指令多数据流(SIMD)，NumPy 可以利用这些指令同时对多个数据进行操作。
+2. reshape 和 resize 有什么区别？
+答： reshape 和 resize 的主要区别：
+
+特性	reshape	resize
+是否修改原数组	不修改，返回新视图	可能修改原数组（in-place）
+总元素数量	必须保持不变	可以改变（不足补0，多余删除）
+内存占用	共享原数组内存（视图）	可能重新分配内存
+返回值	返回新数组（视图）	ndarray.resize返回None（in-place），np.resize返回新数组
