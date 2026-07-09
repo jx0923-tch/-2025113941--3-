@@ -1,0 +1,328 @@
+任务1
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
+
+np.random.seed(42)
+
+print("=" * 60)
+print("任务1: NumPy数组基础操作")
+print("=" * 60)
+
+arr_1d = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+arr_2d = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+arr_3d = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[9, 10], [11, 12]]])
+
+print(f"1D数组: {arr_1d}")
+print(f"1D数组形状: {arr_1d.shape}, 维度: {arr_1d.ndim}")
+print(f"2D数组:\n{arr_2d}")
+print(f"2D数组形状: {arr_2d.shape}, 维度: {arr_2d.ndim}")
+print(f"3D数组:\n{arr_3d}")
+print(f"3D数组形状: {arr_3d.shape}, 维度: {arr_3d.ndim}")
+
+print("\n索引操作:")
+print(f"1D索引 arr_1d[3:7] = {arr_1d[3:7]}")
+print(f"2D索引 arr_2d[1:3, 0:2] =\n{arr_2d[1:3, 0:2]}")
+print(f"3D索引 arr_3d[1, :, :] =\n{arr_3d[1, :, :]}")
+
+print("\n切片操作:")
+print(f"1D步长切片 arr_1d[::2] = {arr_1d[::2]}")
+print(f"2D行切片 arr_2d[2:, :] =\n{arr_2d[2:, :]}")
+print(f"2D列切片 arr_2d[:, 1:] =\n{arr_2d[:, 1:]}")
+print(f"3D切片 arr_3d[:, :, 0] =\n{arr_3d[:, :, 0]}")
+
+print("\n形状变换:")
+print(f"原始2D形状: {arr_2d.shape}")
+reshaped = arr_2d.reshape(2, 6)
+print(f"重塑为 (2,6):\n{reshaped}")
+flattened = arr_2d.flatten()
+print(f"展平: {flattened}")
+transposed = arr_2d.T
+print(f"转置:\n{transposed}")
+print(f"转置后形状: {transposed.shape}")
+
+resized = np.resize(arr_2d, (3, 5))
+print(f"调整大小 (3,5):\n{resized}")
+raveled = arr_2d.ravel()
+print(f"ravel展开: {raveled}")
+
+print("\n数组连接与分割:")
+arr_a = np.array([[1, 2], [3, 4]])
+arr_b = np.array([[5, 6], [7, 8]])
+v_stack = np.vstack((arr_a, arr_b))
+print(f"垂直堆叠:\n{v_stack}")
+h_stack = np.hstack((arr_a, arr_b))
+print(f"水平堆叠:\n{h_stack}")
+split_arr = np.split(arr_2d, 2, axis=0)
+print(f"水平分割:\n{split_arr[0]}\n{split_arr[1]}")
+
+def matrix_operations(A, B):
+    print(f"\n矩阵A:\n{A}")
+    print(f"矩阵B:\n{B}")
+    
+    addition = A + B
+    print(f"加法:\n{addition}")
+    
+    subtraction = A - B
+    print(f"减法:\n{subtraction}")
+    
+    multiplication = np.matmul(A, B)
+    print(f"矩阵乘法:\n{multiplication}")
+    
+    elementwise_mul = A * B
+    print(f"元素乘法:\n{elementwise_mul}")
+    
+    transpose_A = A.T
+    transpose_B = B.T
+    print(f"A的转置:\n{transpose_A}")
+    print(f"B的转置:\n{transpose_B}")
+    
+    det_A = np.linalg.det(A)
+    det_B = np.linalg.det(B)
+    print(f"A的行列式: {det_A:.4f}")
+    print(f"B的行列式: {det_B:.4f}")
+    
+    try:
+        inv_A = np.linalg.inv(A)
+        inv_B = np.linalg.inv(B)
+        print(f"A的逆矩阵:\n{inv_A}")
+        print(f"B的逆矩阵:\n{inv_B}")
+    except np.linalg.LinAlgError:
+        print("矩阵不可逆")
+    
+    trace_A = np.trace(A)
+    trace_B = np.trace(B)
+    print(f"A的迹: {trace_A}")
+    print(f"B的迹: {trace_B}")
+    
+    return addition, multiplication
+
+mat1 = np.array([[1, 2], [3, 4]])
+mat2 = np.array([[5, 6], [7, 8]])
+matrix_operations(mat1, mat2)
+
+print("\n随机数据生成与统计分析:")
+random_arr = np.random.randn(1000)
+print(f"正态分布随机数 (前10个): {random_arr[:10]}")
+
+uniform_arr = np.random.uniform(0, 10, 500)
+print(f"均匀分布随机数 (前10个): {uniform_arr[:10]}")
+
+integer_arr = np.random.randint(1, 100, (5, 5))
+print(f"随机整数矩阵:\n{integer_arr}")
+
+random_arr_2d = np.random.randn(100, 50)
+print(f"随机2D数组形状: {random_arr_2d.shape}")
+
+print(f"\n统计分析:")
+print(f"均值: {np.mean(random_arr):.4f}")
+print(f"中位数: {np.median(random_arr):.4f}")
+print(f"标准差: {np.std(random_arr):.4f}")
+print(f"方差: {np.var(random_arr):.4f}")
+print(f"最小值: {np.min(random_arr):.4f}")
+print(f"最大值: {np.max(random_arr):.4f}")
+print(f"总和: {np.sum(random_arr):.4f}")
+print(f"累积和 (前10个): {np.cumsum(random_arr[:10])}")
+
+percentiles = np.percentile(random_arr, [25, 50, 75])
+print(f"四分位数: 25%={percentiles[0]:.4f}, 50%={percentiles[1]:.4f}, 75%={percentiles[2]:.4f}")
+
+print(f"\n2D数组统计 (按列):")
+print(f"每列均值: {np.mean(random_arr_2d, axis=0)[:5]}")
+print(f"每列标准差: {np.std(random_arr_2d, axis=0)[:5]}")
+print(f"每行均值 (前5行): {np.mean(random_arr_2d, axis=1)[:5]}")
+
+corr_matrix = np.corrcoef(random_arr_2d[:, :10].T)
+print(f"相关系数矩阵 (前10列):\n{corr_matrix[:3, :3]}")
+
+cov_matrix = np.cov(random_arr_2d[:, :10].T)
+print(f"协方差矩阵 (前10列):\n{cov_matrix[:3, :3]}")
+
+print("\n" + "=" * 60)
+print("任务1完成!")
+print("=" * 60)
+任务2
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
+
+np.random.seed(42)
+
+print("=" * 60)
+print("任务2: 金融数据分析实战")
+print("=" * 60)
+
+def generate_stock_data(days=252, start_price=100, drift=0.05, volatility=0.2):
+    returns = np.random.normal(drift/252, volatility/np.sqrt(252), days)
+    prices = start_price * np.exp(np.cumsum(returns))
+    return prices
+
+dates = np.array([datetime(2023, 1, 1) + timedelta(days=i) for i in range(252)])
+stock_prices = generate_stock_data(252, 100, 0.08, 0.25)
+stock_prices2 = generate_stock_data(252, 95, 0.06, 0.30)
+stock_prices3 = generate_stock_data(252, 110, 0.10, 0.20)
+
+price_matrix = np.column_stack([stock_prices, stock_prices2, stock_prices3])
+print(f"股票价格数据形状: {price_matrix.shape}")
+print(f"前10天价格:\n{price_matrix[:10]}")
+
+returns_matrix = np.diff(price_matrix, axis=0) / price_matrix[:-1, :]
+print(f"\n日收益率形状: {returns_matrix.shape}")
+print(f"前10天收益率:\n{returns_matrix[:10]}")
+
+log_returns = np.diff(np.log(price_matrix), axis=0)
+print(f"对数收益率形状: {log_returns.shape}")
+
+mean_returns = np.mean(returns_matrix, axis=0) * 252
+volatilities = np.std(returns_matrix, axis=0) * np.sqrt(252)
+print(f"\n年化收益率: {mean_returns}")
+print(f"年化波动率: {volatilities}")
+
+sharpe_ratio = mean_returns / volatilities
+print(f"夏普比率: {sharpe_ratio}")
+
+covariance = np.cov(returns_matrix.T) * 252
+correlation = np.corrcoef(returns_matrix.T)
+print(f"\n协方差矩阵 (年化):\n{covariance}")
+print(f"相关系数矩阵:\n{correlation}")
+
+def moving_average(data, window):
+    weights = np.ones(window) / window
+    return np.convolve(data, weights, mode='valid')
+
+ma_20_1 = moving_average(stock_prices, 20)
+ma_50_1 = moving_average(stock_prices, 50)
+ma_20_2 = moving_average(stock_prices2, 20)
+ma_50_2 = moving_average(stock_prices2, 50)
+
+print(f"\n移动平均线 (股票1):")
+print(f"SMA 20 (前10个): {ma_20_1[:10]}")
+print(f"SMA 50 (前10个): {ma_50_1[:10]}")
+
+ema_20 = np.zeros(len(stock_prices))
+alpha = 2 / (20 + 1)
+ema_20[0] = stock_prices[0]
+for i in range(1, len(stock_prices)):
+    ema_20[i] = alpha * stock_prices[i] + (1 - alpha) * ema_20[i-1]
+print(f"EMA 20 (前10个): {ema_20[:10]}")
+
+weights = np.array([0.4, 0.3, 0.3])
+portfolio_returns = np.dot(returns_matrix, weights)
+portfolio_mean = np.mean(portfolio_returns) * 252
+portfolio_std = np.std(portfolio_returns) * np.sqrt(252)
+portfolio_sharpe = portfolio_mean / portfolio_std
+
+print(f"\n投资组合分析 (权重 {weights}):")
+print(f"组合年化收益率: {portfolio_mean:.4f}")
+print(f"组合年化波动率: {portfolio_std:.4f}")
+print(f"组合夏普比率: {portfolio_sharpe:.4f}")
+
+num_portfolios = 10000
+results = np.zeros((3, num_portfolios))
+weights_record = []
+
+for i in range(num_portfolios):
+    w = np.random.random(3)
+    w = w / np.sum(w)
+    weights_record.append(w)
+    
+    port_return = np.dot(mean_returns, w)
+    port_std = np.sqrt(np.dot(w.T, np.dot(covariance, w)))
+    port_sharpe = port_return / port_std
+    
+    results[0, i] = port_return
+    results[1, i] = port_std
+    results[2, i] = port_sharpe
+
+max_sharpe_idx = np.argmax(results[2])
+optimal_weights = weights_record[max_sharpe_idx]
+print(f"\n最优投资组合 (最大夏普比率):")
+print(f"权重: {optimal_weights}")
+print(f"年化收益率: {results[0, max_sharpe_idx]:.4f}")
+print(f"年化波动率: {results[1, max_sharpe_idx]:.4f}")
+print(f"夏普比率: {results[2, max_sharpe_idx]:.4f}")
+
+min_vol_idx = np.argmin(results[1])
+min_vol_weights = weights_record[min_vol_idx]
+print(f"\n最小波动率投资组合:")
+print(f"权重: {min_vol_weights}")
+print(f"年化收益率: {results[0, min_vol_idx]:.4f}")
+print(f"年化波动率: {results[1, min_vol_idx]:.4f}")
+
+print(f"\n回撤分析:")
+cumulative_returns = np.cumprod(1 + portfolio_returns)
+running_max = np.maximum.accumulate(cumulative_returns)
+drawdown = (cumulative_returns - running_max) / running_max
+max_drawdown = np.min(drawdown)
+print(f"最大回撤: {max_drawdown:.4f}")
+print(f"最大回撤发生位置: {np.argmin(drawdown)}")
+
+plt.figure(figsize=(15, 10))
+
+plt.subplot(2, 3, 1)
+plt.plot(dates, stock_prices, label='Stock 1', alpha=0.7)
+plt.plot(dates, stock_prices2, label='Stock 2', alpha=0.7)
+plt.plot(dates, stock_prices3, label='Stock 3', alpha=0.7)
+plt.title('股票价格走势')
+plt.xlabel('日期')
+plt.ylabel('价格')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(2, 3, 2)
+plt.plot(dates[1:], returns_matrix[:, 0], label='Stock 1', alpha=0.5)
+plt.plot(dates[1:], returns_matrix[:, 1], label='Stock 2', alpha=0.5)
+plt.plot(dates[1:], returns_matrix[:, 2], label='Stock 3', alpha=0.5)
+plt.title('日收益率')
+plt.xlabel('日期')
+plt.ylabel('收益率')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(2, 3, 3)
+plt.plot(dates[19:], ma_20_1, label='SMA 20', linewidth=2)
+plt.plot(dates[49:], ma_50_1, label='SMA 50', linewidth=2)
+plt.plot(dates, stock_prices, label='Price', alpha=0.5)
+plt.title('移动平均线 (股票1)')
+plt.xlabel('日期')
+plt.ylabel('价格')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(2, 3, 4)
+plt.scatter(results[1, :], results[0, :], c=results[2, :], marker='.', alpha=0.3, cmap='viridis')
+plt.scatter(results[1, min_vol_idx], results[0, min_vol_idx], c='red', s=100, marker='*', label='最小波动率')
+plt.scatter(results[1, max_sharpe_idx], results[0, max_sharpe_idx], c='gold', s=100, marker='*', label='最大夏普比率')
+plt.colorbar(label='夏普比率')
+plt.title('有效前沿')
+plt.xlabel('波动率')
+plt.ylabel('收益率')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(2, 3, 5)
+plt.hist(portfolio_returns, bins=50, alpha=0.7, edgecolor='black')
+plt.axvline(np.mean(portfolio_returns), color='red', linestyle='--', label='均值')
+plt.axvline(np.mean(portfolio_returns) - portfolio_std, color='orange', linestyle='--', label='±1标准差')
+plt.axvline(np.mean(portfolio_returns) + portfolio_std, color='orange', linestyle='--')
+plt.title('投资组合收益率分布')
+plt.xlabel('收益率')
+plt.ylabel('频率')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(2, 3, 6)
+plt.plot(dates[1:], cumulative_returns, label='累积收益', linewidth=2)
+plt.fill_between(dates[1:], cumulative_returns, running_max, alpha=0.3, color='red', label='回撤区域')
+plt.title('累积收益与回撤')
+plt.xlabel('日期')
+plt.ylabel('累积收益')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+print("\n" + "=" * 60)
+print("任务2完成!")
+print("=" * 60)
