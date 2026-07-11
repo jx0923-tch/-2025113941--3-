@@ -1,0 +1,435 @@
+任务1
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+import warnings
+warnings.filterwarnings('ignore')
+
+# 设置中文显示
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
+
+# 1. 加载数据
+print("="*50)
+print("数据加载")
+print("="*50)
+df = pd.read_csv('https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv')
+print(f"数据集形状: {df.shape}")
+print(f"\n前5行数据:")
+print(df.head())
+
+# 2. 数据基本信息
+print("\n" + "="*50)
+print("数据基本信息")
+print("="*50)
+print(df.info())
+print(f"\n缺失值统计:")
+print(df.isnull().sum())
+
+# 3. 处理缺失值
+print("\n" + "="*50)
+print("缺失值处理")
+print("="*50)
+
+# 创建数据副本以便比较不同处理方法
+df_copy1 = df.copy()
+df_copy2 = df.copy()
+df_copy3 = df.copy()
+
+# 3.1 删除缺失值（删除包含缺失值的行）
+df_dropna = df_copy1.dropna()
+print(f"删除缺失值后数据集形状: {df_dropna.shape}")
+
+# 3.2 填充缺失值
+# 年龄填充中位数
+df_copy2['Age'] = df_copy2['Age'].fillna(df_copy2['Age'].median())
+# 登船港口填充众数
+df_copy2['Embarked'] = df_copy2['Embarked'].fillna(df_copy2['Embarked'].mode()[0])
+# 客舱填充为'Unknown'
+df_copy2['Cabin'] = df_copy2['Cabin'].fillna('Unknown')
+print(f"填充缺失值后数据集形状: {df_copy2.shape}")
+print(f"填充后缺失值统计:\n{df_copy2.isnull().sum()}")
+
+# 3.3 插值法填充（使用线性插值）
+df_copy3['Age'] = df_copy3['Age'].interpolate(method='linear', limit_direction='both')
+print(f"插值法填充后年龄列缺失值: {df_copy3['Age'].isnull().sum()}")
+
+# 4. 处理重复记录
+print("\n" + "="*50)
+print("重复记录处理")
+print("="*50)
+print(f"重复记录数量: {df.duplicated().sum()}")
+
+# 如果有重复记录，删除
+if df.duplicated().sum() > 0:
+    df = df.drop_duplicates()
+    print("已删除重复记录")
+else:
+    print("没有发现重复记录")
+
+# 5. 数据类型转换和格式标准化
+print("\n" + "="*50)
+print("数据类型转换和格式标准化")
+print("="*50)
+
+# 5.1 转换数据类型
+df['Survived'] = df['Survived'].astype('category')
+df['Pclass'] = df['Pclass'].astype('category')
+df['Sex'] = df['Sex'].astype('category')
+df['Embarked'] = df['Embarked'].astype('category')
+
+# 5.2 创建新特征
+# 创建家庭大小特征
+df['FamilySize'] = df['SibSp'] + df['Parch'] + 1
+
+# 创建是否单独旅行的特征
+df['IsAlone'] = np.where(df['FamilySize'] == 1, 1, 0)
+
+# 5.3 标准化数值列
+numeric_cols = ['Age', 'Fare', 'FamilySize']
+scaler = StandardScaler()
+df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+
+# 5.4 编码分类变量
+le = LabelEncoder()
+categorical_cols = ['Sex', 'Embarked']
+for col in categorical_cols:
+    df[col + '_encoded'] = le.fit_transform(df[col].astype(str))
+
+print(f"\n处理后的数据类型:")
+print(df.dtypes)
+print(f"\n处理后的数据形状: {df.shape}")
+print(f"\n处理后的数据前5行:")
+print(df.head())
+
+# 6. 数据可视化 - 展示清洗效果
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+# 6.1 年龄分布（对比原数据和清洗后数据）
+axes[0, 0].hist(df['Age'], bins=30, alpha=0.7, color='blue')
+axes[0, 0].set_title('标准化后的年龄分布')
+axes[0, 0].set_xlabel('年龄（标准化）')
+axes[0, 0].set_ylabel('频数')
+
+# 6.2 生存情况
+survival_counts = df['Survived'].value_counts()
+axes[0, 1].bar(['未幸存', '幸存'], survival_counts.values, color=['red', 'green'])
+axes[0, 1].set_title('乘客生存情况')
+axes[0, 1].set_ylabel('人数')
+
+# 6.3 船舱等级分布
+pclass_counts = df['Pclass'].value_counts().sort_index()
+axes[0, 2].bar(['一等舱', '二等舱', '三等舱'], pclass_counts.values, color=['gold', 'silver', 'brown'])
+axes[0, 2].set_title('船舱等级分布')
+axes[0, 2].set_ylabel('人数')
+
+# 6.4 性别分布
+sex_counts = df['Sex'].value_counts()
+axes[1, 0].pie(sex_counts.values, labels=['男性', '女性'], autopct='%1.1f%%')
+axes[1, 0].set_title('性别分布')
+
+# 6.5 家庭大小分布
+axes[1, 1].hist(df['FamilySize'], bins=15, alpha=0.7, color='green')
+axes[1, 1].set_title('家庭大小分布')
+axes[1, 1].set_xlabel('家庭大小')
+axes[1, 1].set_ylabel('频数')
+
+# 6.6 票价分布
+axes[1, 2].hist(df['Fare'], bins=30, alpha=0.7, color='purple')
+axes[1, 2].set_title('标准化后的票价分布')
+axes[1, 2].set_xlabel('票价（标准化）')
+axes[1, 2].set_ylabel('频数')
+
+plt.tight_layout()
+plt.show()
+
+# 7. 数据质量报告
+print("\n" + "="*50)
+print("数据质量报告")
+print("="*50)
+print(f"总记录数: {len(df)}")
+print(f"特征数量: {len(df.columns)}")
+print(f"缺失值总数: {df.isnull().sum().sum()}")
+print(f"数据类型分布:")
+print(df.dtypes.value_counts())
+任务2
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from datetime import datetime
+import warnings
+warnings.filterwarnings('ignore')
+
+# 设置中文显示
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
+
+# 1. 加载北京PM2.5数据（使用UCI数据集）
+print("="*50)
+print("加载空气质量数据")
+print("="*50)
+
+# 由于原始UCI数据集需要下载，这里创建模拟数据
+np.random.seed(42)
+
+# 生成模拟的北京空气质量数据（2010-2014年）
+dates = pd.date_range(start='2010-01-01', end='2014-12-31', freq='D')
+n = len(dates)
+
+# 模拟PM2.5浓度（含季节性变化和随机噪声）
+seasonal_pm25 = 100 + 50 * np.sin(2 * np.pi * (dates.dayofyear / 365.25 - 0.2))
+noise = np.random.normal(0, 20, n)
+pm25 = np.maximum(10, seasonal_pm25 + noise + np.random.normal(0, 10, n))
+
+# 模拟其他污染物
+pm10 = pm25 * (1.2 + 0.1 * np.random.randn(n))
+so2 = 30 + 10 * np.sin(2 * np.pi * (dates.dayofyear / 365.25 - 0.3)) + np.random.normal(0, 5, n)
+no2 = 40 + 15 * np.sin(2 * np.pi * (dates.dayofyear / 365.25 - 0.1)) + np.random.normal(0, 8, n)
+co = 2 + 0.5 * np.sin(2 * np.pi * (dates.dayofyear / 365.25 - 0.4)) + np.random.normal(0, 0.3, n)
+o3 = 50 + 30 * np.sin(2 * np.pi * (dates.dayofyear / 365.25 - 0.6)) + np.random.normal(0, 10, n)
+
+# 创建DataFrame
+df_air = pd.DataFrame({
+    'date': dates,
+    'pm25': pm25,
+    'pm10': pm10,
+    'so2': so2,
+    'no2': no2,
+    'co': co,
+    'o3': o3
+})
+
+# 添加年份、月份、季节特征
+df_air['year'] = df_air['date'].dt.year
+df_air['month'] = df_air['date'].dt.month
+df_air['season'] = df_air['date'].dt.month.map({
+    12: 'Winter', 1: 'Winter', 2: 'Winter',
+    3: 'Spring', 4: 'Spring', 5: 'Spring',
+    6: 'Summer', 7: 'Summer', 8: 'Summer',
+    9: 'Fall', 10: 'Fall', 11: 'Fall'
+})
+
+print(f"数据集形状: {df_air.shape}")
+print(f"\n前5行数据:")
+print(df_air.head())
+print(f"\n数据统计信息:")
+print(df_air.describe())
+
+# 2. 统计分析
+print("\n" + "="*50)
+print("污染物统计指标")
+print("="*50)
+
+pollutants = ['pm25', 'pm10', 'so2', 'no2', 'co', 'o3']
+stats = {}
+for pollutant in pollutants:
+    stats[pollutant] = {
+        'mean': df_air[pollutant].mean(),
+        'median': df_air[pollutant].median(),
+        'std': df_air[pollutant].std(),
+        'min': df_air[pollutant].min(),
+        'max': df_air[pollutant].max(),
+        'q25': df_air[pollutant].quantile(0.25),
+        'q75': df_air[pollutant].quantile(0.75)
+    }
+
+stats_df = pd.DataFrame(stats).T
+print(stats_df.round(2))
+
+# 3. 相关性分析
+print("\n" + "="*50)
+print("污染物相关性分析")
+print("="*50)
+
+correlation_matrix = df_air[pollutants].corr()
+print("相关系数矩阵:")
+print(correlation_matrix.round(3))
+
+# 4. 可视化 - 多种图表
+fig = plt.figure(figsize=(18, 14))
+
+# 4.1 折线图 - PM2.5时间序列
+ax1 = plt.subplot(3, 3, 1)
+# 按年份和月份分组计算平均值
+monthly_pm25 = df_air.groupby(['year', 'month'])['pm25'].mean().reset_index()
+monthly_pm25['date'] = pd.to_datetime(monthly_pm25[['year', 'month']].assign(day=1))
+ax1.plot(monthly_pm25['date'], monthly_pm25['pm25'], 'b-', linewidth=2)
+ax1.set_title('PM2.5浓度月度变化趋势', fontsize=12)
+ax1.set_xlabel('时间')
+ax1.set_ylabel('PM2.5浓度 (μg/m³)')
+ax1.grid(True, alpha=0.3)
+ax1.tick_params(axis='x', rotation=45)
+
+# 4.2 柱状图 - 各季节PM2.5平均浓度
+ax2 = plt.subplot(3, 3, 2)
+seasonal_mean = df_air.groupby('season')['pm25'].mean().reindex(['Spring', 'Summer', 'Fall', 'Winter'])
+colors_season = ['green', 'red', 'orange', 'blue']
+bars = ax2.bar(seasonal_mean.index, seasonal_mean.values, color=colors_season, alpha=0.7)
+ax2.set_title('不同季节PM2.5平均浓度', fontsize=12)
+ax2.set_xlabel('季节')
+ax2.set_ylabel('PM2.5浓度 (μg/m³)')
+ax2.grid(True, alpha=0.3, axis='y')
+for bar, value in zip(bars, seasonal_mean.values):
+    ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1, 
+             f'{value:.1f}', ha='center', va='bottom')
+
+# 4.3 散点图 - PM2.5与PM10关系
+ax3 = plt.subplot(3, 3, 3)
+ax3.scatter(df_air['pm25'], df_air['pm10'], alpha=0.5, s=10, c='blue')
+ax3.set_title('PM2.5与PM10相关性', fontsize=12)
+ax3.set_xlabel('PM2.5浓度 (μg/m³)')
+ax3.set_ylabel('PM10浓度 (μg/m³)')
+ax3.grid(True, alpha=0.3)
+# 添加回归线
+z = np.polyfit(df_air['pm25'], df_air['pm10'], 1)
+p = np.poly1d(z)
+ax3.plot(df_air['pm25'].sort_values(), p(df_air['pm25'].sort_values()), 
+         'r-', linewidth=2, label=f'拟合线 (R²={correlation_matrix.loc["pm25","pm10"]:.2f})')
+ax3.legend()
+
+# 4.4 热力图 - 所有污染物相关性
+ax4 = plt.subplot(3, 3, 4)
+im = ax4.imshow(correlation_matrix, cmap='coolwarm', vmin=-1, vmax=1)
+ax4.set_xticks(range(len(pollutants)))
+ax4.set_yticks(range(len(pollutants)))
+ax4.set_xticklabels(pollutants)
+ax4.set_yticklabels(pollutants)
+ax4.set_title('污染物相关性热力图', fontsize=12)
+# 添加数值标签
+for i in range(len(pollutants)):
+    for j in range(len(pollutants)):
+        ax4.text(j, i, f'{correlation_matrix.iloc[i, j]:.2f}', 
+                ha='center', va='center', 
+                color='white' if abs(correlation_matrix.iloc[i, j]) > 0.5 else 'black')
+plt.colorbar(im, ax=ax4)
+
+# 4.5 箱线图 - 各季节污染物分布
+ax5 = plt.subplot(3, 3, 5)
+data_to_plot = [df_air[df_air['season'] == s]['pm25'].values for s in ['Spring', 'Summer', 'Fall', 'Winter']]
+bp = ax5.boxplot(data_to_plot, labels=['春季', '夏季', '秋季', '冬季'])
+ax5.set_title('不同季节PM2.5分布', fontsize=12)
+ax5.set_xlabel('季节')
+ax5.set_ylabel('PM2.5浓度 (μg/m³)')
+ax5.grid(True, alpha=0.3, axis='y')
+
+# 4.6 饼图 - 各污染物年均浓度占比
+ax6 = plt.subplot(3, 3, 6)
+yearly_avg = df_air[pollutants].mean()
+colors_pie = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD']
+patches, texts, autotexts = ax6.pie(yearly_avg.values, 
+                                    labels=pollutants, 
+                                    autopct='%1.1f%%',
+                                    colors=colors_pie,
+                                    startangle=90)
+ax6.set_title('各污染物年均浓度占比', fontsize=12)
+
+# 4.7 柱状图 - 各年份PM2.5变化
+ax7 = plt.subplot(3, 3, 7)
+yearly_pm25 = df_air.groupby('year')['pm25'].mean()
+bars = ax7.bar(yearly_pm25.index.astype(str), yearly_pm25.values, 
+               color='steelblue', alpha=0.7)
+ax7.set_title('各年份PM2.5平均浓度', fontsize=12)
+ax7.set_xlabel('年份')
+ax7.set_ylabel('PM2.5浓度 (μg/m³)')
+ax7.grid(True, alpha=0.3, axis='y')
+for bar, value in zip(bars, yearly_pm25.values):
+    ax7.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1, 
+             f'{value:.1f}', ha='center', va='bottom')
+
+# 4.8 折线图 - 所有污染物时间序列
+ax8 = plt.subplot(3, 3, 8)
+# 按月平均
+monthly_all = df_air.groupby(['year', 'month'])[pollutants].mean().reset_index()
+monthly_all['date'] = pd.to_datetime(monthly_all[['year', 'month']].assign(day=1))
+for pollutant in pollutants:
+    ax8.plot(monthly_all['date'], monthly_all[pollutant], 
+             label=pollutant, linewidth=1.5, alpha=0.7)
+ax8.set_title('各污染物月度变化趋势', fontsize=12)
+ax8.set_xlabel('时间')
+ax8.set_ylabel('浓度 (μg/m³)')
+ax8.legend(loc='upper right', fontsize=8)
+ax8.grid(True, alpha=0.3)
+ax8.tick_params(axis='x', rotation=45)
+
+# 4.9 密度图 - 各污染物分布
+ax9 = plt.subplot(3, 3, 9)
+for pollutant, color in zip(pollutants, colors_pie):
+    df_air[pollutant].plot(kind='kde', ax=ax9, label=pollutant, 
+                           color=color, linewidth=2)
+ax9.set_title('各污染物分布密度', fontsize=12)
+ax9.set_xlabel('浓度 (μg/m³)')
+ax9.set_ylabel('密度')
+ax9.legend(loc='upper right', fontsize=8)
+ax9.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+
+# 5. 季节性变化规律分析
+print("\n" + "="*50)
+print("季节性变化规律分析")
+print("="*50)
+
+seasonal_stats = df_air.groupby('season')[pollutants].agg(['mean', 'std']).round(2)
+print("各季节污染物统计:")
+print(seasonal_stats)
+
+# 按月统计
+monthly_stats = df_air.groupby('month')[pollutants].mean().round(2)
+print("\n各月份污染物平均浓度:")
+print(monthly_stats)
+
+# 6. 绘制季节性热力图
+fig2, ax = plt.subplots(figsize=(12, 8))
+
+# 创建月度-季节热力图数据
+monthly_seasonal = df_air.groupby(['month', 'season'])['pm25'].mean().unstack()
+monthly_seasonal = monthly_seasonal.reindex(range(1, 13))
+
+im = ax.imshow(monthly_seasonal.values, cmap='YlOrRd', aspect='auto')
+ax.set_xticks(range(len(monthly_seasonal.columns)))
+ax.set_yticks(range(len(monthly_seasonal.index)))
+ax.set_xticklabels(monthly_seasonal.columns)
+ax.set_yticklabels([f'{i}月' for i in monthly_seasonal.index])
+ax.set_title('PM2.5浓度月度-季节热力图', fontsize=14)
+ax.set_xlabel('季节')
+ax.set_ylabel('月份')
+
+# 添加数值标签
+for i in range(len(monthly_seasonal.index)):
+    for j in range(len(monthly_seasonal.columns)):
+        ax.text(j, i, f'{monthly_seasonal.iloc[i, j]:.1f}',
+                ha='center', va='center', color='black', fontsize=9)
+
+plt.colorbar(im, ax=ax, label='PM2.5浓度 (μg/m³)')
+plt.tight_layout()
+plt.show()
+
+# 7. 总结报告
+print("\n" + "="*50)
+print("空气质量分析总结")
+print("="*50)
+
+print(f"1. 数据概况:")
+print(f"   - 时间范围: {df_air['date'].min()} 至 {df_air['date'].max()}")
+print(f"   - 总记录数: {len(df_air)}")
+print(f"   - 涵盖季节: {df_air['season'].unique()}")
+
+print(f"\n2. 主要污染物特征:")
+for pollutant in pollutants:
+    print(f"   - {pollutant.upper()}: 均值={df_air[pollutant].mean():.1f}, "
+          f"标准差={df_air[pollutant].std():.1f}")
+
+print(f"\n3. 相关性发现:")
+high_corr = correlation_matrix.unstack().sort_values(ascending=False)
+high_corr = high_corr[high_corr < 1].head(5)
+for (col1, col2), corr in high_corr.items():
+    print(f"   - {col1}与{col2}相关性: {corr:.3f}")
+
+print(f"\n4. 季节性规律:")
+for season in ['Winter', 'Spring', 'Summer', 'Fall']:
+    avg = df_air[df_air['season'] == season]['pm25'].mean()
+    print(f"   - {season}: PM2.5平均浓度 {avg:.1f} μg/m³")
